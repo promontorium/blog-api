@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions
 
@@ -5,10 +6,24 @@ from . import serializers
 
 # from .filters import IsPostComment
 from .models import Comment, Post
-from .permissions import IsOwnerOrAdminOrReadOnly
+from .permissions import IsAdmin
 
 
-class PostListView(generics.ListCreateAPIView):
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filterset_fields = ("id", "username", "first_name", "last_name", "email")
+    search_fields = ("username", "first_name", "last_name", "email")
+    ordering_fields = ("id", "username", "first_name", "last_name", "email")
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+
+
+class PostList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter)
     filterset_fields = "__all__"
@@ -22,7 +37,7 @@ class PostListView(generics.ListCreateAPIView):
 
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrAdminOrReadOnly)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly | IsAdmin,)
     queryset = Post.objects.all()
     serializer_class = serializers.PostSerializer
 
@@ -31,7 +46,7 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().perform_update(serializer)
 
 
-class CommentListView(generics.ListCreateAPIView):
+class CommentList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter)
     filterset_fields = "__all__"
@@ -51,7 +66,7 @@ class CommentListView(generics.ListCreateAPIView):
 
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrAdminOrReadOnly)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly | IsAdmin,)
     queryset = Comment.objects.all()
     serializer_class = serializers.CommentSerializer
 

@@ -28,6 +28,37 @@ class UserDetail(generics.RetrieveAPIView):
     serializer_class = serializers.UserSerializer
 
 
+class MeUserDetail(generics.RetrieveAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user = request.user
+        serializer = serializers.UserSerializer(user)
+        return Response(serializer.data)
+
+
+class MePostList(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
+    filterset_fields = "__all__"
+    search_fields = ("title", "content")
+    serializer_class = serializers.PostSerializer
+
+    def get_queryset(self):
+        return models.Post.objects.filter(created_by=self.request.user.id)
+
+
+class MeCommentList(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
+    filterset_fields = "__all__"
+    search_fields = ("content",)
+    serializer_class = serializers.CommentSerializer
+
+    def get_queryset(self):
+        return models.Comment.objects.filter(created_by=self.request.user.id)
+
+
 class UserPostList(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
     filterset_fields = "__all__"
@@ -82,10 +113,9 @@ class CommentList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        result = models.Post.objects.filter(id=post_id)
-        if not result.exists():
+        if not models.Post.objects.filter(id=post_id).exists():
             raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
-        return result
+        return models.Comment.objects.filter(post_id=post_id)
 
     def perform_create(self, serializer):
         post_id = self.kwargs.get("post_id")
@@ -94,15 +124,13 @@ class CommentList(generics.ListCreateAPIView):
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsReadOnly | permissions.IsOwner | IsAdminUser,)
-    queryset = models.Comment.objects.all()
     serializer_class = serializers.CommentSerializer
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        result = models.Post.objects.filter(id=post_id)
-        if not result.exists():
+        if not models.Post.objects.filter(id=post_id).exists():
             raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
-        return result
+        return models.Comment.objects.filter(post_id=post_id)
 
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user

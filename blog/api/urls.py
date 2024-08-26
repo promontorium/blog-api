@@ -13,6 +13,6 @@ urlpatterns = [
     path("me/comments/", views.MeCommentList.as_view(), name="me-comments"),
     path("posts/", views.PostList.as_view(), name="posts"),
     path("posts/<int:pk>/", views.PostDetail.as_view(), name="post-detail"),
-    path("posts/<int:post_id>/comments/", views.CommentList.as_view(), name="post-comments"),
-    path("posts/<int:post_id>/comments/<int:pk>/", views.CommentDetail.as_view(), name="post-comment-detail"),
+    path("posts/<int:post_id>/comments/", views.PostCommentList.as_view(), name="post-comments"),
+    path("comments/<int:pk>", views.CommentDetail.as_view(), name="comment-detail"),
 ]

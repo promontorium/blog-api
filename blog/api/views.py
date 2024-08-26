@@ -104,7 +104,7 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().perform_update(serializer)
 
 
-class CommentList(generics.ListCreateAPIView):
+class PostCommentList(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
     filterset_fields = "__all__"
@@ -119,18 +119,15 @@ class CommentList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         post_id = self.kwargs.get("post_id")
+        if models.Post.objects.filter(id=post_id).exists():
+            raise serializers.ValidationError("Invalid post_id.")
         serializer.save(post_id=post_id, created_by=self.request.user)
 
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsReadOnly | permissions.IsOwner | IsAdminUser,)
     serializer_class = serializers.CommentSerializer
-
-    def get_queryset(self):
-        post_id = self.kwargs.get("post_id")
-        if not models.Post.objects.filter(id=post_id).exists():
-            raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
-        return models.Comment.objects.filter(post_id=post_id)
+    queryset = models.Comment.objects.all()
 
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user

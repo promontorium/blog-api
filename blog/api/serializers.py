@@ -15,11 +15,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    comments = CommentSerializer(many=True, read_only=True)
+    post_comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
-        fields = ("id", "title", "content", "created_by", "created_at", "changed_by", "changed_at", "comments")
+        fields = ("id", "title", "content", "created_by", "created_at", "changed_by", "changed_at", "post_comments")
         read_only_fields = ("created_by", "created_at", "changed_by", "changed_at")
 
 

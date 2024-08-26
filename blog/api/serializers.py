@@ -6,7 +6,7 @@ from .models import Comment, Post
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    post = serializers.PrimaryKeyRelatedField(read_only=True)
+    post = serializers.HyperlinkedRelatedField(read_only=True, view_name="post-detail")
 
     class Meta:
         model = Comment

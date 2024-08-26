@@ -23,6 +23,28 @@ class UserDetail(generics.RetrieveAPIView):
     serializer_class = serializers.UserSerializer
 
 
+class UserPostList(generics.ListAPIView):
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter)
+    filterset_fields = "__all__"
+    search_fields = ("title", "content")
+    serializer_class = serializers.PostSerializer
+
+    def get_queryset(self):
+        user_id = self.kwargs.get("user_id")
+        return Post.objects.filter(created_by=user_id)
+
+
+class UserCommentList(generics.ListAPIView):
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter)
+    filterset_fields = "__all__"
+    search_fields = ("content",)
+    serializer_class = serializers.CommentSerializer
+
+    def get_queryset(self):
+        user_id = self.kwargs.get("user_id")
+        return Comment.objects.filter(created_by=user_id)
+
+
 class PostList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter)

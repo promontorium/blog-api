@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, views
+from rest_framework.exceptions import NotFound
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import (
     IsAdminUser,
@@ -82,8 +82,10 @@ class CommentList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        get_object_or_404(models.Post, id=post_id)
-        return models.Comment.objects.filter(post_id=post_id)
+        result = models.Post.objects.filter(id=post_id)
+        if not result.exists():
+            raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
+        return result
 
     def perform_create(self, serializer):
         post_id = self.kwargs.get("post_id")
@@ -97,8 +99,10 @@ class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        get_object_or_404(models.Post, id=post_id)
-        return models.Comment.objects.filter(post_id=post_id)
+        result = models.Post.objects.filter(id=post_id)
+        if not result.exists():
+            raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
+        return result
 
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user

@@ -4,6 +4,7 @@ from rest_framework import filters, generics, permissions
 
 from . import serializers
 from .models import Comment, Post
+from .permissions import IsOwner, IsReadOnly
 
 
 class UserList(generics.ListAPIView):
@@ -34,7 +35,7 @@ class PostList(generics.ListCreateAPIView):
 
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly | permissions.IsAdminUser,)
+    permission_classes = (IsReadOnly | IsOwner | permissions.IsAdminUser,)
     queryset = Post.objects.all()
     serializer_class = serializers.PostSerializer
 
@@ -63,7 +64,7 @@ class CommentList(generics.ListCreateAPIView):
 
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly | permissions.IsAdminUser,)
+    permission_classes = (IsReadOnly | IsOwner | permissions.IsAdminUser,)
     queryset = Comment.objects.all()
     serializer_class = serializers.CommentSerializer
 

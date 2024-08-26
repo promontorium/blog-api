@@ -13,6 +13,12 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ("id", "post", "content", "created_by", "created_at", "changed_by", "changed_at")
         read_only_fields = ("created_by", "created_at", "changed_by", "changed_at")
 
+    def validate(self, attrs):
+        post_id = self.context["view"].kwargs.get("post_id")
+        if not Post.objects.filter(id=post_id).exists():
+            raise serializers.ValidationError("Invalid post_id.")
+        return attrs
+
 
 class PostSerializer(serializers.ModelSerializer):
     post_comments = CommentSerializer(many=True, read_only=True)

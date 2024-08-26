@@ -10,9 +10,6 @@ class Post(models.Model):
     changed_by = models.ForeignKey(User, related_name="changed_posts", null=True, on_delete=models.DO_NOTHING)
     changed_at = models.DateTimeField(null=True)
 
-    def __str__(self):
-        return self.title
-
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, related_name="post_comments", on_delete=models.CASCADE)
@@ -21,6 +18,3 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     changed_by = models.ForeignKey(User, related_name="changed_comments", null=True, on_delete=models.DO_NOTHING)
     changed_at = models.DateTimeField(null=True)
-
-    def __str__(self):
-        return f"Comment on {self.post.title} by {self.id}"

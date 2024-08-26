@@ -11,9 +11,9 @@ class UserList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
-    filterset_fields = ("id", "username", "first_name", "last_name", "email")
+    filterset_fields = ("id", "username", "first_name", "last_name", "email", "is_staff", "last_login", "date_joined")
     search_fields = ("username", "first_name", "last_name", "email")
-    ordering_fields = ("id", "username", "first_name", "last_name", "email")
+    ordering_fields = ("id", "username", "first_name", "last_name", "email", "last_login", "date_joined")
 
 
 class UserDetail(generics.RetrieveAPIView):

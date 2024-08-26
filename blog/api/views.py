@@ -31,8 +31,7 @@ class PostList(generics.ListCreateAPIView):
     serializer_class = serializers.PostSerializer
 
     def perform_create(self, serializer):
-        created_by = self.request.user
-        serializer.save(created_by=created_by, changed_by=created_by)
+        serializer.save(created_by=self.request.user)
 
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -50,7 +49,6 @@ class CommentList(generics.ListCreateAPIView):
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter)
     filterset_fields = "__all__"
     search_fields = ("content",)
-    # queryset = Comment.objects.all()
     serializer_class = serializers.CommentSerializer
 
     def get_queryset(self):
@@ -58,10 +56,9 @@ class CommentList(generics.ListCreateAPIView):
         return Comment.objects.filter(post_id=post_id)
 
     def perform_create(self, serializer):
-        created_by = self.request.user
         post_id = self.kwargs.get("post_id")
         post = Post.objects.get(id=post_id)
-        serializer.save(post=post, created_by=created_by, changed_by=created_by)
+        serializer.save(post=post, created_by=self.request.user)
 
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):

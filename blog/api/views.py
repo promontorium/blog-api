@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, permissions
+from rest_framework import filters, generics, permissions, status, views
+from rest_framework.response import Response
 
 from . import serializers
 from .models import Comment, Post
@@ -75,3 +76,18 @@ class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user
         return super().perform_update(serializer)
+
+
+class ChangePassword(views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.ChangePasswordSerializer
+
+    def put(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not self.request.user.check_password(serializer.data.get("old_password")):
+            return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+        self.request.user.set_password(serializer.data.get("new_password"))
+        self.request.user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, permissions, status, views
 from rest_framework.response import Response
@@ -41,6 +42,7 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user
+        serializer.validated_data["changed_at"] = timezone.now()
         return super().perform_update(serializer)
 
 
@@ -72,6 +74,7 @@ class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user
+        serializer.validated_data["changed_at"] = timezone.now()
         return super().perform_update(serializer)
 
 

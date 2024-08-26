@@ -8,7 +8,7 @@ class Post(models.Model):
     created_by = models.ForeignKey(User, related_name="post_create_by", on_delete=models.DO_NOTHING)
     created_at = models.DateTimeField(auto_now_add=True)
     changed_by = models.ForeignKey(User, related_name="post_changed_by", null=True, on_delete=models.DO_NOTHING)
-    changed_at = models.DateTimeField(auto_now=True)
+    changed_at = models.DateTimeField(null=True)
 
     def __str__(self):
         return self.title
@@ -20,7 +20,7 @@ class Comment(models.Model):
     created_by = models.ForeignKey(User, related_name="comment_create_by", on_delete=models.DO_NOTHING)
     created_at = models.DateTimeField(auto_now_add=True)
     changed_by = models.ForeignKey(User, related_name="comment_changed_by", null=True, on_delete=models.DO_NOTHING)
-    changed_at = models.DateTimeField(auto_now=True)
+    changed_at = models.DateTimeField(null=True)
 
     def __str__(self):
         return f"Comment on {self.post.title} by {self.id}"

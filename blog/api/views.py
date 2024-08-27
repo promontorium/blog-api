@@ -1,20 +1,17 @@
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status, views
-from rest_framework.exceptions import NotFound
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import (
-    IsAdminUser,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from . import models, permissions, serializers
 
 
-class UserList(generics.ListAPIView):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
@@ -22,75 +19,50 @@ class UserList(generics.ListAPIView):
     search_fields = ("username", "first_name", "last_name", "email")
     ordering_fields = ("id", "username", "first_name", "last_name", "email", "last_login", "date_joined")
 
-
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = serializers.UserSerializer
-
-
-class MeUserDetail(generics.RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request):
+    def retrieve(self, request, pk=None):
+        if pk is not None:
+            return super().retrieve(request, pk)
         user = request.user
-        serializer = serializers.UserSerializer(user)
+        serializer = self.get_serializer(user)
         return Response(serializer.data)
 
+    @action(
+        detail=False,
+        methods=["patch"],
+        permission_classes=[IsAuthenticated],
+        name="Change Password",
+        serializer_class=serializers.ChangePasswordSerializer,
+    )
+    def change_password(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not self.request.user.check_password(serializer.data.get("old_password")):
+            return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        user.set_password(serializer.data.get("new_password"))
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-class MePostList(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
+
+class PostList(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
     filterset_fields = "__all__"
     search_fields = ("title", "content")
     serializer_class = serializers.PostSerializer
 
     def get_queryset(self):
-        return models.Post.objects.filter(created_by=self.request.user.id)
+        if "/me/" in self.request.path:  # TODO
+            return models.Post.objects.filter(created_by=self.request.user)
 
-
-class MeCommentList(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
-    filterset_fields = "__all__"
-    search_fields = ("content",)
-    serializer_class = serializers.CommentSerializer
-
-    def get_queryset(self):
-        return models.Comment.objects.filter(created_by=self.request.user.id)
-
-
-class UserPostList(generics.ListAPIView):
-    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
-    filterset_fields = "__all__"
-    search_fields = ("title", "content")
-    serializer_class = serializers.PostSerializer
-
-    def get_queryset(self):
         user_id = self.kwargs.get("user_id")
+        if user_id is None:
+            return models.Post.objects.all()
+
+        if not User.objects.filter(id=user_id).exists():
+            raise NotFound(f"No {User._meta.object_name} matches the given query.")
+
         return models.Post.objects.filter(created_by=user_id)
-
-
-class UserCommentList(generics.ListAPIView):
-    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
-    filterset_fields = "__all__"
-    search_fields = ("content",)
-    serializer_class = serializers.CommentSerializer
-
-    def get_queryset(self):
-        user_id = self.kwargs.get("user_id")
-        return models.Comment.objects.filter(created_by=user_id)
-
-
-class PostList(generics.ListCreateAPIView):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
-    filterset_fields = "__all__"
-    search_fields = ("title", "content")
-    queryset = models.Post.objects.all()
-    serializer_class = serializers.PostSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
 
 class PostDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -104,8 +76,16 @@ class PostDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().perform_update(serializer)
 
 
-class PostCommentList(generics.ListCreateAPIView):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+class PostCreate(generics.CreateAPIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.PostSerializer
+    queryset = models.Post.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class CommentList(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
     filterset_fields = "__all__"
     search_fields = ("content",)
@@ -113,15 +93,22 @@ class PostCommentList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs.get("post_id")
-        if not models.Post.objects.filter(id=post_id).exists():
-            raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
-        return models.Comment.objects.filter(post_id=post_id)
+        if post_id is not None:
+            if not models.Post.objects.filter(id=post_id).exists():
+                raise NotFound(f"No {models.Post._meta.object_name} matches the given query.")
+            return models.Comment.objects.filter(post_id=post_id)
 
-    def perform_create(self, serializer):
-        post_id = self.kwargs.get("post_id")
-        if models.Post.objects.filter(id=post_id).exists():
-            raise serializers.ValidationError("Invalid post_id.")
-        serializer.save(post_id=post_id, created_by=self.request.user)
+        if "/me/" in self.request.path:  # TODO
+            return models.Comment.objects.filter(created_by=self.request.user)
+
+        user_id = self.kwargs.get("user_id")
+        if user_id is None:
+            return models.Comment.objects.all()
+
+        if not User.objects.filter(id=user_id).exists():
+            raise NotFound(f"No {User._meta.object_name} matches the given query.")
+
+        return models.Comment.objects.filter(created_by=user_id)
 
 
 class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -135,16 +122,13 @@ class CommentDetail(generics.RetrieveUpdateDestroyAPIView):
         return super().perform_update(serializer)
 
 
-class ChangePassword(views.APIView):
+class CommentCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.ChangePasswordSerializer
+    serializer_class = serializers.CommentSerializer
+    queryset = models.Comment.objects.all()
 
-    def put(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        if not self.request.user.check_password(serializer.data.get("old_password")):
-            return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
-        self.request.user.set_password(serializer.data.get("new_password"))
-        self.request.user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def perform_create(self, serializer):
+        post_id = self.kwargs.get("post_id")
+        if not models.Post.objects.filter(id=post_id).exists():
+            raise ValidationError("Invalid post_id.")
+        serializer.save(post_id=post_id, created_by=self.request.user)

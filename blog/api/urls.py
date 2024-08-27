@@ -1,3 +1,4 @@
+from django.shortcuts import redirect
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
@@ -6,9 +7,15 @@ from . import views
 router = DefaultRouter()
 router.register(r"users", views.UserViewSet, basename="user")
 
+
 urlpatterns = [
     path("", include(router.urls)),
     path("me/", views.UserViewSet.as_view({"get": "retrieve"}), name="me-detail"),
+    path(
+        "me/change_password/",
+        lambda request: redirect(request.get_full_path().replace("me", "users"), permanent=True),
+        name="redirect-change-password",
+    ),
     path("me/posts/", views.PostList.as_view(), name="me-posts"),
     path("me/comments/", views.CommentList.as_view(), name="me-comments"),
     path("users/<int:user_id>/posts/", views.PostList.as_view(), name="user-posts"),

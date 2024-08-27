@@ -1,11 +1,12 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from drf_queryfields import QueryFieldsMixin
 from rest_framework import serializers
 
 from . import models
 
 
-class CommentSerializer(serializers.HyperlinkedModelSerializer):
+class CommentSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Comment
@@ -13,7 +14,7 @@ class CommentSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ("post", "created_by", "created_at", "changed_by", "changed_at")
 
 
-class PostSerializer(serializers.HyperlinkedModelSerializer):
+class PostSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
     # post_comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
@@ -22,7 +23,7 @@ class PostSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ("created_by", "created_at", "changed_by", "changed_at", "post_comments")
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
@@ -40,7 +41,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class ChangePasswordSerializer(serializers.Serializer):
+class ChangePasswordSerializer(QueryFieldsMixin, serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 

@@ -26,6 +26,7 @@ urlpatterns = [
     path("", include(user_router.urls)),
     path("", include(post_router.urls)),
     path("", include(user_post_router.urls)),
+    path("posts/create", views.PostCreateView.as_view(), name="post-create"),
     path(
         "me/change_password/",
         lambda request: redirect(request.get_full_path().replace("me", "users"), permanent=True),

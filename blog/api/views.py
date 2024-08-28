@@ -5,7 +5,8 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.generics import CreateAPIView
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from . import models, permissions, serializers
@@ -44,16 +45,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class PostViewSet(viewsets.ModelViewSet):
+class PostViewSet(viewsets.ReadOnlyModelViewSet, viewsets.mixins.UpdateModelMixin, viewsets.mixins.DestroyModelMixin):
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
     filterset_fields = "__all__"
     search_fields = ("title", "content")
     serializer_class = serializers.PostSerializer
-
-    def get_permissions(self):
-        if self.action in ("update", "partial_update", "destroy"):
-            return (permissions.IsOwnerOrAdmin(),)
-        return (IsAuthenticatedOrReadOnly(),)
+    permission_classes = (permissions.IsReadOnly | permissions.IsOwner | IsAdminUser,)
 
     def get_queryset(self):
         result = models.Post.objects
@@ -63,13 +60,19 @@ class PostViewSet(viewsets.ModelViewSet):
             result = result.filter(created_by=user_id)
         return result
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
     def perform_update(self, serializer):
         serializer.validated_data["changed_by"] = self.request.user
         serializer.validated_data["changed_at"] = timezone.now()
         return super().perform_update(serializer)
+
+
+class PostCreateView(CreateAPIView):
+    serializer_class = serializers.PostSerializer
+    viewsets = models.Post.objects
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -77,7 +80,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     filterset_fields = "__all__"
     search_fields = ("content",)
     serializer_class = serializers.CommentSerializer
-    permission_classes = (permissions.IsReadOnly | permissions.IsOwnerOrAdmin,)
+    permission_classes = (permissions.IsReadOnly | permissions.IsOwner | IsAdminUser,)
 
     def get_permissions(self):
         if self.action == "create":

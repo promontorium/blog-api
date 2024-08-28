@@ -61,9 +61,7 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet, viewsets.mixins.UpdateModelMixi
         return result
 
     def perform_update(self, serializer):
-        serializer.validated_data["changed_by"] = self.request.user
-        serializer.validated_data["changed_at"] = timezone.now()
-        return super().perform_update(serializer)
+        serializer.save(changed_by=self.request.user, changed_at=timezone.now())
 
 
 class PostCreateView(CreateAPIView):
@@ -105,6 +103,4 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(post_id=post_id, created_by=self.request.user)
 
     def perform_update(self, serializer):
-        serializer.validated_data["changed_by"] = self.request.user
-        serializer.validated_data["changed_at"] = timezone.now()
-        return super().perform_update(serializer)
+        serializer.save(changed_by=self.request.user, changed_at=timezone.now())

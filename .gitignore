@@ -1,5 +1,6 @@
-.vscode
 .venv
+.vscode
 __pycache__
-*.log
 *.sqlite3
+*.log
+.env

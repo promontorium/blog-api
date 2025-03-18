@@ -1,0 +1,25 @@
+[project]
+name = "dran"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django-filter>=25.1",
+    "djangorestframework>=3.15.2",
+    "djangorestframework-queryfields>=1.1.0",
+    "drf-nested-routers>=0.94.1",
+    "gunicorn>=23.0.0",
+    "psycopg2-binary>=2.9.10",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+]
+
+[tool.ruff]
+line-length = 119
+
+[tool.mypy]
+ignore_errors = true

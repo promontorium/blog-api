@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from drf_queryfields import QueryFieldsMixin
 from rest_framework import serializers
@@ -7,7 +6,6 @@ from . import models
 
 
 class CommentSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
-
     class Meta:
         model = models.Comment
         fields = ("id", "post", "content", "created_by", "created_at", "changed_by", "changed_at")
@@ -24,9 +22,8 @@ class PostSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
 
 
 class UserSerializer(QueryFieldsMixin, serializers.HyperlinkedModelSerializer):
-
     class Meta:
-        model = User
+        model = models.User
         fields = (
             "id",
             "username",

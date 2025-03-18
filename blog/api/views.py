@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -14,7 +13,7 @@ from . import models, permissions, serializers
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     ME_PK = "me"
-    queryset = User.objects
+    queryset = models.User.objects
     serializer_class = serializers.UserSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter, OrderingFilter)
     filterset_fields = ("id", "username", "first_name", "last_name", "email", "is_staff", "last_login", "date_joined")

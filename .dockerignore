@@ -1,0 +1,15 @@
+Dockerfile
+docker-compose.yml
+docker-compose.override.yml
+.dockerignore
+.gitignore
+.git
+readme.md
+.env
+
+.venv
+.vscode
+.mypy_cache
+**/__pycache__
+**/*.log
+**/*.sqlite3

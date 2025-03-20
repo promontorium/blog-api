@@ -1,5 +1,5 @@
 # Python builder stage
-FROM python:3.13-alpine AS python-builder
+FROM python:3.13.2-alpine3.21 AS python-builder
 COPY . /app
 WORKDIR /app
 # Disable __pycache__ creation since it will not be skipped by .dockerignore x_x
@@ -7,12 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Install globally
 ENV UV_PROJECT_ENVIRONMENT=/usr/local
 # Get uv from image
-COPY --from=ghcr.io/astral-sh/uv:0.6.7-alpine /usr/local/bin/uv /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.6.8-python3.8-alpine /usr/local/bin/uv /bin/
 RUN uv sync --no-dev --frozen && \
     rm uv.lock pyproject.toml
 
 # Final image stage
-FROM python:3.13-alpine
+FROM python:3.13.2-alpine3.21
 # Create non-root user
 RUN adduser -D appuser
 # Python environment variables

@@ -1,13 +1,15 @@
-## Blog api
+# Blog api
 
-### Technologies Used
+## Technologies Used
+
 - Python
 - Django REST Framework
 - PostgreSQL
 - Docker & Docker Compose
 
-### .env file example
-```dosini
+## .env file example
+
+```env
 DJANGO_SECRET_KEY=your-key...
 DJANGO_DEBUG=False
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
@@ -20,8 +22,10 @@ POSTGRES_USER=myuser
 POSTGRES_PASSWORD=mypassword
 ```
 
-### docker-compose.override.yml
+## docker-compose.override.yml
+
 For debugging. VS Code laucnch config example:
+
 ```json
 {
     "name": "Docker: Debug DRF",
